@@ -1,3 +1,53 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nodejs-app
+---
+
+#Service for accessing application outside of cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: mynode-app
+  namespace: nodejs-app
+spec:
+  selector:
+    app: mynode-app
+  ports:
+    - port: 80
+      targetPort: 3000
+  type: LoadBalancer
+---
+#Pod spec as part of Deployment for HA
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-app-dep
+  namespace: nodejs-app
+spec:
+  replicas: 2
+  minReadySeconds: 60
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      appname: mynode-app
+      template:
+    metadata:
+      name: nodejs-app-cn
+      labels:
+        appname: mynode-app
+        env: dev
+    spec:
+      containers:
+      - name: nodejs-app-cn
+        image: habi9/habeeba_19:latest  
+        ports:
+        - containerPort: 3000
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
@@ -11,16 +61,3 @@ spec:
       - backend:
           serviceName: mynode-app
           servicePort: 80
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mynode-app
-  namespace: nodejs
-spec:
-  selector:
-    app: mynode-app
-  ports:
-    - port: 80
-      targetPort: 3000
-  type: LoadBalancer
