@@ -1,2 +1,0 @@
-echo "hai"
-echo "good mrng"
